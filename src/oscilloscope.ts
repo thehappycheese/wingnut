@@ -44,7 +44,7 @@ export class Oscilloscope {
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
     }
 
-    update_probe(key:string, new_value:number, max:number, min:number){
+    update_probe(key:string, new_value:number, min:number, max:number){
         if(!(key in this.var_state)){
             const label = document.createElement('div');
             const output = document.createElement('div');
@@ -89,7 +89,7 @@ export class Oscilloscope {
         const previous_x = this.time_step_state-step;
 
         for (let [_, {value, last_value, color, min, max}] of Object.entries(this.var_state)){
-            const transform = (x:number) => (x-min)/(max-min)*this.canvas.height;
+            const transform = (x:number) => (1-(x-min)/(max-min))*this.canvas.height;
             ctx.beginPath();
             ctx.strokeStyle = color;
             ctx.moveTo(previous_x          , transform(value));

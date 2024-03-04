@@ -39,7 +39,7 @@ const textureCube = loader.load(
 		'ny',
 		'pz',
 		'nz',
-    ].map(item => new URL(`./texture/skybox_planet/${item}.png`, import.meta.url).href)
+    ].map(item => new URL(`./texture/skybox_blender/${item}.png`, import.meta.url).href)
 );
 scene.background = textureCube;
 
@@ -114,45 +114,28 @@ let camera_velocity = new THREE.Vector3(0, 0, 0);
 const DRAG = 0.9;
 const GRAVITY = new THREE.Vector3(0, -0.00001, 0);
 const MOVE_SPEED = 0.03;
-const ROTATION_SPEED = 0.2;
+const ROTATION_SPEED = 0.05;
 function animate() {
     requestAnimationFrame(animate);
+    controls.poll_controller();
+
+    let left_axes = controls.get_left_axes();
+    let roll_axis = controls.get_trigger_axis();
 
 
 
-    // handel user input
-    // todo:
-    if (keysPressed["a"]) {
-        let rotationQuaternion = new THREE.Quaternion();
-        rotationQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), MOVE_SPEED);
-        camera_direction.multiply(rotationQuaternion).normalize();
-    }
-    if (keysPressed["d"]) {
-        let rotationQuaternion = new THREE.Quaternion();
-        rotationQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -MOVE_SPEED);
-        camera_direction.multiply(rotationQuaternion).normalize();
-    }
+    let rotationQuaternion = new THREE.Quaternion();
+    rotationQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), left_axes.x*ROTATION_SPEED);
+    camera_direction.multiply(rotationQuaternion).normalize();
 
-    if (keysPressed["s"]) {
-        let rotationQuaternion = new THREE.Quaternion();
-        rotationQuaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -MOVE_SPEED);
-        camera_direction.multiply(rotationQuaternion).normalize();
-    }
-    if (keysPressed["w"]) {
-        let rotationQuaternion = new THREE.Quaternion();
-        rotationQuaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), MOVE_SPEED);
-        camera_direction.multiply(rotationQuaternion).normalize();
-    }
-    if (keysPressed["q"]) {
-        let rotationQuaternion = new THREE.Quaternion();
-        rotationQuaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), MOVE_SPEED);
-        camera_direction.multiply(rotationQuaternion).normalize();
-    }
-    if (keysPressed["e"]) {
-        let rotationQuaternion = new THREE.Quaternion();
-        rotationQuaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -MOVE_SPEED);
-        camera_direction.multiply(rotationQuaternion).normalize();
-    }
+    rotationQuaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), left_axes.y*ROTATION_SPEED);
+    camera_direction.multiply(rotationQuaternion).normalize();
+
+    rotationQuaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), roll_axis*ROTATION_SPEED*0.5);
+    camera_direction.multiply(rotationQuaternion).normalize();
+
+    oscilloscope.update_probe("ax-h", left_axes.x, 1,-1);
+    oscilloscope.update_probe("ax-v", left_axes.y, 1,-1);
 
     let camera_up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera_direction);
     let camera_backward = new THREE.Vector3(0, 0, 1).applyQuaternion(camera_direction);
@@ -208,8 +191,8 @@ function animate() {
 
     oscilloscope.update_probe("altitude"           , camera.position.y, -80, 80);
     //oscilloscope.update_probe("angle forward up"   , angle_from_horizon, 0, Math.PI);
-    oscilloscope.update_probe("acceleration"       , -acceleration, 0, 0.05);
-    oscilloscope.update_probe("speed"              , camera_velocity.length(),0,0.5);
+    oscilloscope.update_probe("acceleration"       , -acceleration, -0.05, 0.05);
+    oscilloscope.update_probe("speed"              , camera_velocity.length(),0, 0.5);
     oscilloscope.update_chart(0.5)
     //let forward_velocity_component = camera_velocity.clone().projectOnVector(camera_backward);
 

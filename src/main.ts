@@ -63,13 +63,8 @@ scene.add(origin_axis_helper);
 
 
 
-/**
- * The value that controls how hard you accelerate when tilting forward (should be zero... it should all come from gravity if possible)
- */
-const COEFFICIENT_OF_SLIPPYSLIDE = 1/80;
-
 const DRAG = 0.995;
-const GRAVITY = new THREE.Vector3(0, -0.002, 0);
+const GRAVITY = new THREE.Vector3(0, -0.0015, 0);
 const ROTATION_SPEED = 0.05;
 
 // ==========================
@@ -138,13 +133,13 @@ function animate() {
     //oscilloscope.update_probe("acceleration"       , -acceleration, -0.05, 0.05);
     oscilloscope.update_probe("speed"              , camera_velocity.length(),0, 0.5);
     //let forward_velocity_component = camera_velocity.clone().projectOnVector(camera_backward);
-    oscilloscope.update_probe("lift", lift*1000, -2, 4);
+    oscilloscope.update_probe("lift", lift*1000, -2, 5);
     
     let forward_speed = camera_velocity.dot(camera_forward);
     let upward_speed = camera_velocity.dot(camera_up);
     let angle_of_attack =  Math.atan2(-upward_speed, forward_speed);
-    oscilloscope.update_probe("forward_speed", forward_speed,-0.1,0.1)
-    //oscilloscope.update_probe("upward_speed", upward_speed,-0.1,0.1)
+    oscilloscope.update_probe("forward_speed", forward_speed,-0.1,0.2)
+    oscilloscope.update_probe("upward_speed", upward_speed,-0.1,0.2)
     oscilloscope.update_probe("angle_of_attack", angle_of_attack, -Math.PI, Math.PI)    
     
     //indicator2.setRotationFromQuaternion(camera_direction);

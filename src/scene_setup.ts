@@ -35,7 +35,5 @@ export function setup_scene(game_dom_element:HTMLElement){
     );
     scene.background = textureCube;
 
-    
-
     return {renderer, scene, camera};
 }

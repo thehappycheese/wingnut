@@ -4,6 +4,7 @@ import { Oscilloscope } from './oscilloscope';
 import { Controls } from './controls';
 import * as sim from './flight_simulation';
 import { setup_scene } from './scene_setup';
+import { build_player_model } from './build_player_model';
 
 const oscilloscope = new Oscilloscope(document.querySelector("#oscilloscope")!);
 const controls = new Controls();
@@ -17,21 +18,7 @@ scene.add(sunlight);
 const ambient_light = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambient_light);
 
-// ===============================
-// MODELS
-const player_model = new THREE.Group();
-
-const head_geometry = new THREE.SphereGeometry(0.3, 32, 32);
-const head_material = new THREE.MeshPhongMaterial({ color: 0xffff00 });
-const head = new THREE.Mesh(head_geometry, head_material);
-head.position.z = -1;
-player_model.add(head);
-
-const torso_geometry = new THREE.BoxGeometry(1, 0.2, 1);
-const torso_material = new THREE.MeshPhongMaterial({ color: 0xff0000 });
-const torso = new THREE.Mesh(torso_geometry, torso_material);
-player_model.add(torso);
-
+const {player_model, scarf} = build_player_model();
 scene.add(player_model);
 
 for (let i = 0; i < 250; i++) {
@@ -58,8 +45,9 @@ const origin_axis_helper = new THREE.AxesHelper(3);
 scene.add(origin_axis_helper);
 
 const DRAG = 0.995;
-const GRAVITY = new THREE.Vector3(0, -0.0015, 0);
-const ROTATION_SPEED = 0.05;
+const GRAVITY = new THREE.Vector3(0, -0.001, 0);
+const ROTATION_SENSITIVITY = 0.05;
+const ROLL_SENSITIVITY = 0.03;
 
 // ==========================
 // ANIMATED VARIABLES
@@ -74,13 +62,13 @@ function animate() {
     let roll_axis = controls.get_trigger_axis();
 
     let rotationQuaternion = new THREE.Quaternion();
-    rotationQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), left_axes.x * ROTATION_SPEED);
+    rotationQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), left_axes.x * ROTATION_SENSITIVITY);
     player_direction.multiply(rotationQuaternion).normalize();
 
-    rotationQuaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), left_axes.y * ROTATION_SPEED);
+    rotationQuaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -left_axes.y * ROTATION_SENSITIVITY);
     player_direction.multiply(rotationQuaternion).normalize();
 
-    rotationQuaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), roll_axis * ROTATION_SPEED * 0.5);
+    rotationQuaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), roll_axis * ROLL_SENSITIVITY);
     player_direction.multiply(rotationQuaternion).normalize();
 
     let player_up = new THREE.Vector3(0, 1, 0).applyQuaternion(player_direction);
@@ -97,10 +85,26 @@ function animate() {
     player_model.position.add(player_velocity);
     player_model.setRotationFromQuaternion(player_direction);
 
-    camera.position.copy(player_model.position);
-    camera.position.add(player_up.multiplyScalar(2)); // Adjust camera height above the player
-    camera.position.add(player_forward.multiplyScalar(-5)); // Adjust camera distance behind the player
-    camera.lookAt(player_model.position);
+    // Orient the scarf according to the wind
+    const WIND_SENSITIVITY = 0.5;
+    const relativeWind = player_velocity.clone().negate().applyQuaternion(player_model.quaternion.clone().invert());
+    scarf.lookAt(scarf.position.clone().add(relativeWind.multiplyScalar(WIND_SENSITIVITY)));
+
+     // Camera follows the player's orientation with influence from velocity
+     const CAMERA_DISTANCE = 10;
+     const CAMERA_LERP_FACTOR = 0.1;
+     const VELOCITY_INFLUENCE = 0.2;
+ 
+     const cameraOffset = new THREE.Vector3(0, 2, CAMERA_DISTANCE);
+     const cameraTargetPosition = player_model.position.clone().add(cameraOffset.applyQuaternion(player_direction));
+ 
+     const velocityOffset = player_velocity.clone().multiplyScalar(VELOCITY_INFLUENCE);
+     cameraTargetPosition.add(velocityOffset);
+ 
+     camera.position.lerp(cameraTargetPosition, CAMERA_LERP_FACTOR);
+ 
+     const cameraLookAtPosition = player_model.position.clone();
+     camera.lookAt(cameraLookAtPosition);
 
     orientation_indicator.setRotationFromQuaternion(player_direction);
     oscilloscope.update_probe("altitude", player_model.position.y, -80, 80);

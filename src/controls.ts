@@ -76,7 +76,8 @@ export class Controls {
         this._current_gamepad = e.gamepad;
     }
     handel_pad_disconnected(e: GamepadEvent) {
-
+        console.log("TODO: Handle Gamepad Disconnected;")
+        console.log(e.gamepad)
     }
     handel_key_down(e: KeyboardEvent) {
         this._keys_pressed[e.key] = true;
@@ -90,30 +91,40 @@ export class Controls {
     }
 
     get_left_axes(): Vector2 {
+        let result = new Vector2(0,0);
         if (this._current_gamepad) {
-            return new Vector2(
+            result = new Vector2(
                 -this.axis_horizontal_left,
                 -this.axis_vertical_left
             );
-        } else {
-            return new Vector2(0, 0);
         }
-
+        if (this._keys_pressed["a"]) {
+            result.x -= 1;
+        }
+        if (this._keys_pressed["d"]) {
+            result.x += 1;
+        }
+        if (this._keys_pressed["w"]) {
+            result.y += 1;
+        }
+        if (this._keys_pressed["s"]) {
+            result.y -= 1;
+        }
+        return result;
     }
 
     get_trigger_axis(): number {
+        let result = 0;
         if (this._current_gamepad) {
-            return this.axis_trigger_left-this.axis_trigger_right;
-        } else {
-            let result = 0;
-            if(this._keys_pressed["q"]){
-                result += 1;
-            }
-            if(this._keys_pressed["e"]){
-                result -= 1;
-            }
-            return result
+            result = this.axis_trigger_left-this.axis_trigger_right;
         }
+        if(this._keys_pressed["q"]){
+            result += 1;
+        }
+        if(this._keys_pressed["e"]){
+            result -= 1;
+        }
+        return result
     }
 
 }

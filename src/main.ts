@@ -5,6 +5,7 @@ import { Controls } from './controls';
 import * as sim from './flight_simulation';
 import { setup_scene } from './scene_setup';
 import { build_player_model } from './build_player_model';
+import { DustAtmosphere } from './dust';
 
 const oscilloscope = new Oscilloscope(document.querySelector("#oscilloscope")!);
 const controls = new Controls();
@@ -44,6 +45,13 @@ scene.add(yellow_arrow);
 const origin_axis_helper = new THREE.AxesHelper(3);
 scene.add(origin_axis_helper);
 
+
+const dust_atmosphere = new DustAtmosphere();
+scene.add(dust_atmosphere);
+
+// =============================
+// CONSTANT VARIABLES
+
 const DRAG = 0.995;
 const GRAVITY = new THREE.Vector3(0, -0.001, 0);
 const ROTATION_SENSITIVITY = 0.05;
@@ -74,8 +82,6 @@ function animate() {
     let player_up = new THREE.Vector3(0, 1, 0).applyQuaternion(player_direction);
     let player_forward = new THREE.Vector3(0, 0, -1).applyQuaternion(player_direction);
 
-    let world_up = new THREE.Vector3(0, 1, 0);
-
     var lift = Math.max(-0.5, Math.min(0.5, -sim.lift(player_velocity, player_forward, player_up) * 10));
 
     player_velocity.add(player_up.clone().multiplyScalar(lift));
@@ -103,8 +109,10 @@ function animate() {
  
      camera.position.lerp(cameraTargetPosition, CAMERA_LERP_FACTOR);
  
-     const cameraLookAtPosition = player_model.position.clone();
+     const cameraLookAtPosition = player_model.position.clone().addScaledVector(player_velocity,40);
      camera.lookAt(cameraLookAtPosition);
+
+    dust_atmosphere.reposition_dust_around_point(player_model.position);
 
     orientation_indicator.setRotationFromQuaternion(player_direction);
     oscilloscope.update_probe("altitude", player_model.position.y, -80, 80);
